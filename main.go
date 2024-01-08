@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"github.com/joho/godotenv"
 	"github.com/zojl/tg2rss/fetcher"
 	"github.com/zojl/tg2rss/parser"
 	"github.com/zojl/tg2rss/rss"
@@ -12,6 +15,8 @@ import (
 const urlPrefix = "https://t.me/s/"
 
 func main() {
+	godotenv.Load()
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		channelName := r.URL.Path[1:]
 		if (len(channelName) == 0) {
@@ -41,6 +46,7 @@ func main() {
 		w.Write([]byte(rssFeed))
 	})
 
-	log.Println("Starting server...")
-	http.ListenAndServe(":80", nil)
+	port := os.Getenv("LISTEN_PORT")
+	log.Printf("Starting server at %s...\n", port)
+	http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
 }
