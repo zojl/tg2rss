@@ -18,8 +18,7 @@ func main() {
 			w.Write([]byte(""))
 			return
 		}
-		
-		log.Println("requested " + channelName)
+
 		if !validator.Validate(channelName) {
 			http.Error(w, "Invalid channel name", 404)
 			return

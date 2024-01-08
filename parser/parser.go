@@ -99,7 +99,6 @@ func getItem(post *goquery.Selection) rss.Item {
 	if (unsupported.Length() != 0) && (len(item.Content) == 0) {
 		item.Content = fmt.Sprintf("Unsupported post, <a href='%s'>view in Telegram</a>", item.Link)
 		item.Description = "Unsopported post: " + item.Link
-		fmt.Println("unsupported: " + item.Link)
 	}
 	
 	if len([]rune(item.Description)) > maxTitleLength {
