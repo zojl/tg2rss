@@ -1,16 +1,17 @@
 package parser
 
 import (
-	"fmt"
-	"time"
-	"strings"
 	"errors"
+	"fmt"
+	"os"
 	"regexp"
+	"strconv"
+	"strings"
+	"time"
 	"github.com/zojl/tg2rss/rss"
 	"github.com/PuerkitoBio/goquery"
 )
 
-const maxTitleLength = 64
 const expectedItemsCount = 15
 const timeLayout = "2006-01-02T15:04:05Z07:00"
 
@@ -45,6 +46,11 @@ func replaceLineBreaks(selection *goquery.Selection) {
 }
 
 func getItem(post *goquery.Selection) rss.Item {
+	maxTitleLength, err := strconv.Atoi(os.Getenv("MAX_TITLE_LENGTH"))
+	if maxTitleLength < 3 || err != nil {
+		maxTitleLength = 3
+	}
+
 	item := rss.Item{}
 	
 	media := post.Find("a.tgme_widget_message_photo_wrap, a.tgme_widget_message_video_player")
@@ -101,16 +107,16 @@ func getItem(post *goquery.Selection) rss.Item {
 		item.Description = "Unsopported post: " + item.Link
 	}
 	
-	if len([]rune(item.Description)) > maxTitleLength {
-		item.Title = string([]rune(item.Description)[:maxTitleLength-3]) + "..."
-	} else {
-		item.Title = item.Description
-	}
-	
+	title := item.Description
 	if hasMedia {
-		item.Title = "🖼️" + item.Title
+		title = "🖼️" + title
 	}
-	
+	if len([]rune(title)) > maxTitleLength {
+		item.Title = string([]rune(title)[:maxTitleLength - 3]) + "..."
+	} else {
+		item.Title = title
+	}
+
 	return item
 }
 
