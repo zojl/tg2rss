@@ -43,7 +43,7 @@ func ParseHTML(html string) (rss.Channel, error) {
 func ParseMedia(html string) (string, error) {
 	post, _ := goquery.NewDocumentFromReader(strings.NewReader(html))
 	photos := post.Find("a.tgme_widget_message_photo_wrap")
-	if photos.Length() >= 0 {
+	if photos.Length() > 0 {
 		photo := photos.First()
 		styleRaw, _ := photo.Attr("style")
 		return getBackgroundImage(styleRaw), nil

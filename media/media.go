@@ -6,7 +6,7 @@ import (
 )
 
 func GetPostPath(path string) (string) {
-	suffix := "?single"
+	suffix := "?embed=1&mode=tme"
 	path = strings.TrimPrefix(path, "media/")
 	lastDotIndex := strings.LastIndex(path, ".")
 	if lastDotIndex == -1 {

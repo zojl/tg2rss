@@ -13,7 +13,7 @@ import (
 	"github.com/zojl/tg2rss/validator"
 )
 
-const urlPrefix = "https://t.me/s/"
+const urlPrefix = "https://t.me/"
 
 func main() {
 	godotenv.Load()
@@ -44,7 +44,7 @@ func main() {
 }
 
 func handleChannel(w http.ResponseWriter, channelName string) {
-	html, err := fetcher.FetchHTML(urlPrefix + channelName)
+	html, err := fetcher.FetchHTML(fmt.Sprintf("%ss/%s", urlPrefix, channelName))
 	if err != nil {
 		http.Error(w, "Channel not found", 404)
 		return
@@ -66,11 +66,13 @@ func handleMedia(w http.ResponseWriter, r *http.Request, path string) {
 
 	if (err != nil) {
 		http.Error(w, err.Error(), 404)
+		return
 	}
 
 	mediaPath, err := parser.ParseMedia(html)
 	if (err != nil) {
 		http.Error(w, err.Error(), 404)
+		return
 	}
 
 	http.Redirect(w, r, mediaPath, http.StatusSeeOther)
