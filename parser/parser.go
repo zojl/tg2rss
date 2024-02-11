@@ -160,7 +160,7 @@ func getPhotoUrl(link string, inline string) string {
 	if os.Getenv("PROXY_MEDIA") == "true" {
 		extension := extractExtension(backgroundImageSrc)
 		identifier, _ := getPostIdentifier(link)
-		return fmt.Sprintf("%s/media/%s.%s", os.Getenv("MEDIA_HOST"), identifier, extension)
+		return fmt.Sprintf("%s/media%s.%s", os.Getenv("MEDIA_HOST"), identifier, extension)
 	}
 
 	return backgroundImageSrc

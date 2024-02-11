@@ -1,16 +1,17 @@
 package media
 
 import (
+	"fmt"
 	"strings"
 )
 
 func GetPostPath(path string) (string) {
+	suffix := "?single"
 	path = strings.TrimPrefix(path, "media/")
 	lastDotIndex := strings.LastIndex(path, ".")
 	if lastDotIndex == -1 {
-		// Если точка не найдена, возвращаем исходный путь
-		return path
+		return fmt.Sprintf("%s%s", path, suffix)
 	}
 	identifier := path[:lastDotIndex]
-	return identifier
+	return fmt.Sprintf("%s%s", identifier, suffix);
 }
