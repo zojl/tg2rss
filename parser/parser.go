@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -39,6 +40,18 @@ func ParseHTML(html string) (rss.Channel, error) {
 	return channel, nil
 }
 
+func ParseMedia(html string) (string, error) {
+	post, _ := goquery.NewDocumentFromReader(strings.NewReader(html))
+	photos := post.Find("a.tgme_widget_message_photo_wrap")
+	if photos.Length() >= 0 {
+		photo := photos.First()
+		styleRaw, _ := photo.Attr("style")
+		return getBackgroundImage(styleRaw), nil
+	}
+
+	return "", errors.New("post not found or has no media")
+}
+
 func replaceLineBreaks(selection *goquery.Selection) {
 	selection.Find("br").Each(func(j int, replaceLineBreakselection *goquery.Selection) {
 		_ = replaceLineBreakselection.ReplaceWithHtml("\n")
@@ -63,7 +76,7 @@ func getItem(post *goquery.Selection) rss.Item {
 			item.Content = item.Content + fmt.Sprintf(
 				"<a href='%s'><img src='%s' alt='post image'></a><br>",
 				linkHref,
-				getBackgroundImage(styleRaw),
+				getPhotoUrl(linkHref, styleRaw),
 			)
 		})
 		
@@ -130,4 +143,33 @@ func getBackgroundImage(inline string) string {
 	}
 	
 	return ""
+}
+
+func getPostIdentifier(postUrl string) (string, error) {
+	parsedURL, err := url.Parse(postUrl)
+	if err != nil {
+		return "", err
+	}
+	// Получение пути из разобранного URL
+	path := parsedURL.Path
+	return path, nil
+}
+
+func getPhotoUrl(link string, inline string) string {
+	backgroundImageSrc := getBackgroundImage(inline)
+	if os.Getenv("PROXY_MEDIA") == "true" {
+		extension := extractExtension(backgroundImageSrc)
+		identifier, _ := getPostIdentifier(link)
+		return fmt.Sprintf("%s/media/%s.%s", os.Getenv("MEDIA_HOST"), identifier, extension)
+	}
+
+	return backgroundImageSrc
+}
+
+func extractExtension(url string) string {
+	parts := strings.Split(url, "/")
+	file := parts[len(parts)-1]
+	fileParts := strings.Split(file, ".")
+	extension := fileParts[len(fileParts)-1]
+	return extension
 }
