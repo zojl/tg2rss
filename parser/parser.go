@@ -62,7 +62,6 @@ func ParseMedia(html string) (string, error) {
 	if videoPreviews.Length() > 0 {
 		videoPreview := videoPreviews.First()
 		styleRaw, _ := videoPreview.Attr("style")
-		fmt.Println(styleRaw)
 		return getBackgroundImage(styleRaw), nil
 	}
 
