@@ -42,11 +42,20 @@ func ParseHTML(html string) (rss.Channel, error) {
 
 func ParseMedia(html string) (string, error) {
 	post, _ := goquery.NewDocumentFromReader(strings.NewReader(html))
+
 	photos := post.Find("a.tgme_widget_message_photo_wrap")
 	if photos.Length() > 0 {
 		photo := photos.First()
 		styleRaw, _ := photo.Attr("style")
 		return getBackgroundImage(styleRaw), nil
+	}
+
+	videos := post.Find("a.tgme_widget_message_video_player")
+	if videos.Length() > 0 {
+		video := videos.First()
+		videoWrap := video.Find(".tgme_widget_message_video_wrap").First()
+		videoLink, _ := videoWrap.Find("video").First().Attr("src")
+		return videoLink, nil
 	}
 
 	return "", errors.New("post not found or has no media")
@@ -92,7 +101,17 @@ func getItem(post *goquery.Selection) rss.Item {
 				return
 			}
 
-			videoPlayer, _ := previewContent.Find(".tgme_widget_message_video_wrap").First().Html()
+			videoWrap := previewContent.Find(".tgme_widget_message_video_wrap").First()
+			videoWrapStyle, _ := videoWrap.Attr("style")
+			videoLink := ""
+			if os.Getenv("PROXY_MEDIA") == "true" {
+				linkHref, _ := previewContent.Attr("href")
+				identifier, _ := getPostIdentifier(linkHref)
+				videoLink = fmt.Sprintf("%s/media%s.%s", os.Getenv("MEDIA_HOST"), identifier, "mp4")
+			} else {
+				videoLink, _ = videoWrap.Find("video").First().Attr("src")
+			}
+			videoPlayer := fmt.Sprintf("<div style=\"%s\"><video src=\"%s\" width=\"100%%\" height=\"100%%\"></video></div>", videoWrapStyle, videoLink)
 			item.Content = item.Content + videoPlayer + "<br>"
 		})
 	}
