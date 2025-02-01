@@ -2,20 +2,26 @@ package fetcher
 
 import (
 	"net/http"
-	"io/ioutil"
+	"io"
 )
 
 func FetchHTML(url string) (string, error) {
-	response, err := http.Get(url)
-	if err != nil {
-		return "", err
-	}
-	defer response.Body.Close()
+	response, err := FetchStream(url)
 
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return "", err
-	}
+	return string(response), err
+}
 
-	return string(body), nil
+func FetchStream(url string) ([]byte, error) {
+	resp, err := http.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+
+    respBody, err := io.ReadAll(resp.Body)
+    if err != nil {
+        return nil, err
+    }
+
+    return respBody, nil
 }

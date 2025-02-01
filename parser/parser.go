@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"regexp"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"time"
 	"github.com/zojl/tg2rss/rss"
+	"github.com/zojl/tg2rss/parser/pyBridge"
 	"github.com/PuerkitoBio/goquery"
 )
 
@@ -34,7 +36,8 @@ func ParseHTML(html string) (rss.Channel, error) {
 	channel.Description = descriptionSelection.Text()
 	
 	doc.Find(".tgme_widget_message").Each(func(i int, post *goquery.Selection) {
-		channel.Items = append(channel.Items, getItem(post))
+		newItem := getItem(post)
+		channel.Items = append(channel.Items, newItem)
 	})
 
 	return channel, nil
@@ -81,7 +84,24 @@ func getItem(post *goquery.Selection) rss.Item {
 	}
 
 	item := rss.Item{}
+	messageDate := post.Find(".tgme_widget_message_date").First()
+	item.Link, _ = messageDate.Attr("href")
 	
+	unsupported := post.Find(".message_media_not_supported_label")
+	if (unsupported.Length() != 0) && (len(item.Content) == 0) {
+		if (os.Getenv("PYROGRAM_BRIDGE_HOST") != "") {
+			postId, _ := getPostIdentifier(item.Link)
+			pyBridgeItem, _ := pyBridge.GetPost(postId)
+			if err == nil {
+				return pyBridgeItem
+			} else {
+				log.Println(err)
+			}
+		}
+		item.Content = fmt.Sprintf("Unsupported post, <a href='%s'>view in Telegram</a>", item.Link)
+		item.Description = "Unsupported post: " + item.Link
+	}
+
 	media := post.Find("a.tgme_widget_message_photo_wrap, a.tgme_widget_message_video_player")
 	hasMedia := media.Length() > 0
 	
@@ -112,17 +132,8 @@ func getItem(post *goquery.Selection) rss.Item {
 		item.Description = item.Description + text.Text()
 	})
 
-	messageDate := post.Find(".tgme_widget_message_date").First()
-	item.Link, _ = messageDate.Attr("href")
-
 	postTime, _ := messageDate.Find("time").First().Attr("datetime")
 	item.Created, _ = time.Parse(timeLayout, postTime)
-
-	unsupported := post.Find(".message_media_not_supported_label")
-	if (unsupported.Length() != 0) && (len(item.Content) == 0) {
-		item.Content = fmt.Sprintf("Unsupported post, <a href='%s'>view in Telegram</a>", item.Link)
-		item.Description = "Unsopported post: " + item.Link
-	}
 
 	title := item.Description
 	if hasMedia {
@@ -204,7 +215,6 @@ func getPostIdentifier(postUrl string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// Получение пути из разобранного URL
 	path := parsedURL.Path
 	return path, nil
 }
