@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"github.com/joho/godotenv"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/zojl/tg2rss/fetcher"
 	"github.com/zojl/tg2rss/media"
 	"github.com/zojl/tg2rss/parser"
@@ -19,6 +20,12 @@ func main() {
 	godotenv.Load()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if (!isAuthorized(r)) {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+			return
+		}
+
 		path := r.URL.Path[1:]
 		if len(path) == 0 {
 			w.Write([]byte(""))
@@ -41,6 +48,36 @@ func main() {
 	port := os.Getenv("LISTEN_PORT")
 	log.Printf("Starting server at %s...\n", port)
 	http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
+}
+
+func isAuthorized(r *http.Request) bool {
+	if r.Host == os.Getenv("SAFE_HOST") || os.Getenv("SAFE_HOST") == "" || os.Getenv("HOST_SECRET") == "" {
+		return true
+	}
+
+	if (len(r.URL.Query()["token"]) == 0) {
+		return false
+	}
+
+	requestToken := r.URL.Query()["token"][0]
+	token, err := jwt.Parse(requestToken, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(os.Getenv("HOST_SECRET")), nil
+	})
+
+	if err != nil {
+		return false
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		if pathClaim, ok := claims["path"].(string); ok {
+			return r.URL.Path == pathClaim
+		}
+	}
+
+	return false
 }
 
 func handleChannel(w http.ResponseWriter, channelName string) {

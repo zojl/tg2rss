@@ -13,6 +13,7 @@ import (
 type Item struct {
     Date         string `json:"date"`
     Html         string `json:"html"`
+	Text         string `json:"text"`
     Title        string `json:"title"`
 }
 
@@ -36,7 +37,7 @@ func GetPost(postId string) (rss.Item, error) {
 	item.Title = pybItem.Title
 	item.Link = fmt.Sprintf("https://t.me%s", postId)
 	item.Description = pybItem.Html
-	item.Content = pybItem.Html
+	item.Content = pybItem.Text
 	item.Created, _ = time.Parse(timeLayout, pybItem.Date)
 
 	return item, nil
