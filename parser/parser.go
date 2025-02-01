@@ -92,10 +92,10 @@ func getItem(post *goquery.Selection) rss.Item {
 		if (os.Getenv("PYROGRAM_BRIDGE_HOST") != "") {
 			postId, _ := getPostIdentifier(item.Link)
 			pyBridgeItem, _ := pyBridge.GetPost(postId)
-			if err == nil {
-				return pyBridgeItem
-			} else {
+			if err != nil {
 				log.Println(err)
+			} else {
+				return pyBridgeItem
 			}
 		}
 		item.Content = fmt.Sprintf("Unsupported post, <a href='%s'>view in Telegram</a>", item.Link)

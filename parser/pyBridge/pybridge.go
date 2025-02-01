@@ -11,11 +11,9 @@ import (
 )
 
 type Item struct {
-    Id           string `json:"id"`
     Date         string `json:"date"`
     Html         string `json:"html"`
     Title        string `json:"title"`
-    Views        string `json:"views"`
 }
 
 const timeLayout = "2024-05-14T21:52:34"
